@@ -1,0 +1,57 @@
+#! /bin/sh
+##
+#   git-squash -- Squash all the commits on a branch into a single commit.
+##
+
+set -e # stop on error
+
+###############################################################################
+
+ME=`basename $0`
+
+usage() {
+  cat >&2 <<END
+usage: $ME [-dn] <branch-name> <main-branch-name>
+
+-d: Perform a dry-run by only printing what would be done.
+-n: Same as -d.
+END
+  exit $1
+}
+
+while getopts dn opt
+do
+  case $opt in
+  d|n)  ECHO=echo ;;
+  ?)    usage 1 ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+[ $# -eq 2 ] || usage 1
+
+BRANCH="$1"
+MAIN="$2"
+SQUASHED="${BRANCH}-squashed"
+
+########## Do it.
+
+$ECHO git checkout "$MAIN"
+$ECHO git branch "$SQUASHED"
+$ECHO git checkout "$SQUASHED"
+$ECHO git fetch
+$ECHO git reset --hard "$MAIN"
+$ECHO git merge --squash "$BRANCH"
+$ECHO git commit
+
+[ -z "$ECHO" ] && {
+  echo
+  echo Now, you may want to replace the original branch by the squashed branch.
+  echo To do that, do:
+  echo
+  echo "git push origin --delete $BRANCH # only if you pushed the branch"
+  echo "git branch -D $BRANCH"
+  echo "git branch -m $BRANCH"
+}
+
+###############################################################################
+# vim:set et sw=2 ts=2:
